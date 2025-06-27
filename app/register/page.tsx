@@ -38,6 +38,10 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = "/api/auth/google";
+  };
+
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
@@ -71,6 +75,20 @@ export default function RegisterPage() {
         className="bg-blue-500 text-white p-2 w-full disabled:opacity-50"
       >
         {isSubmitting ? "Регистрируем..." : "Зарегистрироваться"}
+      </button>
+
+      <div className="flex items-center gap-2 my-2">
+        <hr className="flex-1 border-gray-300" />
+        <span className="text-gray-500 text-sm">или</span>
+        <hr className="flex-1 border-gray-300" />
+      </div>
+
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="bg-red-500 hover:bg-red-600 text-white p-2 w-full"
+      >
+        Войти через Google
       </button>
 
       {error && <p className="text-red-600">{error}</p>}
