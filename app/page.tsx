@@ -20,6 +20,11 @@ export default function Home() {
               Register
             </Link>
           </li>
+          <li>
+            <Link href="/login" className={styles.link}>
+              Login
+            </Link>
+          </li>
           <li>Save and see your changes instantly.</li>
         </ol>
 
