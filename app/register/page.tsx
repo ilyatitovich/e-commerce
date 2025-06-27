@@ -48,11 +48,11 @@ export default function RegisterPage() {
       <input
         type="text"
         placeholder="Email или телефон"
-        {...register("emailOrPhone")}
+        {...register("email")}
         className="border p-2 w-full"
       />
-      {errors.emailOrPhone && (
-        <p className="text-red-500 text-sm">{errors.emailOrPhone.message}</p>
+      {errors.email && (
+        <p className="text-red-500 text-sm">{errors.email.message}</p>
       )}
 
       <input

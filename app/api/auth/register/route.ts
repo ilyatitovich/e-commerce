@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { registerSchema } from "@/lib/validators/registerSchema";
-
-// временная БД
-const mockDB: Record<string, unknown> = {};
+import { prisma } from "@/lib/db/prisma";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -16,23 +14,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { emailOrPhone, password } = result.data;
+  const { email, password } = result.data;
 
-  if (mockDB[emailOrPhone]) {
-    return NextResponse.json(
-      { message: "Пользователь уже существует" },
-      { status: 400 }
-    );
-  }
+  // Проверка: уже существует?
+  // const existingUser = await prisma.user.findUnique({
+  //   where: { emailOrPhone },
+  // });
 
+  // if (existingUser) {
+  //   return NextResponse.json(
+  //     { message: "Пользователь уже существует" },
+  //     { status: 400 }
+  //   );
+  // }
+
+  // Хешируем пароль и сохраняем
   const passwordHash = await bcrypt.hash(password, 10);
 
-  mockDB[emailOrPhone] = {
-    id: Date.now(),
-    emailOrPhone,
-    passwordHash,
-    provider: "local",
-  };
+  await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      provider: "local",
+    },
+  });
 
   return NextResponse.json({ message: "Регистрация успешна" }, { status: 200 });
 }
