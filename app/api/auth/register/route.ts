@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { registerSchema } from "@/lib/validators/registerSchema";
 import { prisma } from "@/lib/db/prisma";
 import { sendVerificationEmail } from "@/lib/email";
+import redis from "@/lib/redisClient";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,12 +30,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit по email
-    // const limitKey = `register_limit:${email}`;
-    // const attempt = await redis.incr(limitKey);
-    // if (attempt === 1) await redis.expire(limitKey, 60 * 10); // 10 минут
-    // if (attempt > 3) {
-    //   return NextResponse.json({ message: "Слишком много попыток" }, { status: 429 });
-    // }
+    const limitKey = `register_limit:${email}`;
+    const attempt = await redis.incr(limitKey);
+    if (attempt === 1) await redis.expire(limitKey, 60 * 10); // 10 минут
+    if (attempt > 3) {
+      return NextResponse.json(
+        { message: "Слишком много попыток" },
+        { status: 429 }
+      );
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -57,7 +61,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Сохраняем токен в Redis (на случай если нужно будет инвалидировать)
-    // await redis.set(`email_verify:${email}`, token, "EX", 60 * 60); // 1 час
+    await redis.set(`email_verify:${email}`, token, "EX", 60 * 60); // 1 час
 
     await sendVerificationEmail(email, link);
 
