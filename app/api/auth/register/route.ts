@@ -5,53 +5,70 @@ import { registerSchema } from "@/lib/validators/registerSchema";
 import { prisma } from "@/lib/db/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 
-const BASE_URL = process.env.BASE_URL!;
-
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  try {
+    const body = await req.json();
+    const result = registerSchema.safeParse(body);
 
-  const result = registerSchema.safeParse(body);
-  if (!result.success) {
+    if (!result.success) {
+      return NextResponse.json(
+        { message: result.error.message },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = result.data;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { message: "Пользователь уже существует" },
+        { status: 400 }
+      );
+    }
+
+    // Rate limit по email
+    // const limitKey = `register_limit:${email}`;
+    // const attempt = await redis.incr(limitKey);
+    // if (attempt === 1) await redis.expire(limitKey, 60 * 10); // 10 минут
+    // if (attempt > 3) {
+    //   return NextResponse.json({ message: "Слишком много попыток" }, { status: 429 });
+    // }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Генерация JWT
+    const token = jwt.sign({ email }, process.env.JWT_SECRET!, {
+      expiresIn: "1h",
+    });
+
+    const link = `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          emailVerified: false,
+          provider: "local",
+        },
+      });
+    });
+
+    // Сохраняем токен в Redis (на случай если нужно будет инвалидировать)
+    // await redis.set(`email_verify:${email}`, token, "EX", 60 * 60); // 1 час
+
+    await sendVerificationEmail(email, link);
+
+    return NextResponse.json({
+      message: "Регистрация успешна. Проверьте вашу почту для подтверждения.",
+    });
+  } catch (error) {
+    console.error("Ошибка при регистрации:", error);
     return NextResponse.json(
-      { message: "Некорректные данные" },
-      { status: 400 }
+      { message: "Произошла ошибка при регистрации" },
+      { status: 500 }
     );
   }
-
-  const { email, password } = result.data;
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email: email },
-  });
-
-  if (existingUser) {
-    return NextResponse.json(
-      { message: "Пользователь уже существует" },
-      { status: 400 }
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const newUser = await prisma.user.create({
-    data: {
-      email: email,
-      passwordHash,
-      provider: "local",
-      emailVerified: false,
-    },
-  });
-
-  // Сгенерировать токен подтверждения (JWT)
-  const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET!, {
-    expiresIn: "1h",
-  });
-
-  const verificationLink = `${BASE_URL}/api/auth/verify-email?token=${token}`;
-
-  await sendVerificationEmail(email, verificationLink);
-
-  return NextResponse.json({
-    message: "Регистрация успешна. Проверьте вашу почту для подтверждения.",
-  });
 }

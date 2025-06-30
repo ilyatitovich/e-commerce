@@ -21,7 +21,15 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  redis: 
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - redis_data:/var/lib/redis
+
 volumes:
   pgdata:
   pgadmin_data:
+  redis_data:
 
