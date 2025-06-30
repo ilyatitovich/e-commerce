@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
     }
 
     // const passwordHash = await bcrypt.hash(password, 10);
-    const token = await generateVerificationToken(email);
 
     // await prisma.$transaction(async (tx) => {
     //   await tx.user.create({
@@ -54,6 +53,7 @@ export async function POST(req: NextRequest) {
     //   });
     // });
 
+    const token = await generateVerificationToken(email);
     const link = `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;
     await sendVerificationEmail(email, link);
 
