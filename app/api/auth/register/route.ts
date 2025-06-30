@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { registerSchema } from "@/lib/validators/registerSchema";
 import { prisma } from "@/lib/db/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import redis from "@/lib/redisClient";
+import { generateVerificationToken } from "@/lib/register";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +17,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password } = result.data;
+    const {
+      email,
+      // password
+    } = result.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Rate limit по email
+    // Rate limit
     const limitKey = `register_limit:${email}`;
     const attempt = await redis.incr(limitKey);
     if (attempt === 1) await redis.expire(limitKey, 60 * 10); // 10 минут
@@ -40,29 +42,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    // const passwordHash = await bcrypt.hash(password, 10);
+    const token = await generateVerificationToken(email);
 
-    // Генерация JWT
-    const token = jwt.sign({ email }, process.env.JWT_SECRET!, {
-      expiresIn: "1h",
-    });
+    // await prisma.$transaction(async (tx) => {
+    //   await tx.user.create({
+    //     data: {
+    //       email,
+    //       passwordHash,
+    //     },
+    //   });
+    // });
 
     const link = `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;
-
-    await prisma.$transaction(async (tx) => {
-      await tx.user.create({
-        data: {
-          email,
-          passwordHash,
-          emailVerified: false,
-          provider: "local",
-        },
-      });
-    });
-
-    // Сохраняем токен в Redis (на случай если нужно будет инвалидировать)
-    await redis.set(`email_verify:${email}`, token, "EX", 60 * 60); // 1 час
-
     await sendVerificationEmail(email, link);
 
     return NextResponse.json({

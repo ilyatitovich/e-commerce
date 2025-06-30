@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import { prisma } from "@/lib/db/prisma";
+// import { prisma } from "@/lib/db/prisma";
+import { verifyToken } from "@/lib/register";
 
 const BASE_URL = process.env.BASE_URL!;
 
@@ -8,20 +8,24 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
 
   if (!token) {
-    return NextResponse.redirect(`${BASE_URL}/login?error=missing_token`);
+    return NextResponse.redirect(
+      `${process.env.BASE_URL!}/login?error=missing_token`
+    );
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
-      userId: number;
-    };
+    const data = await verifyToken(token);
 
-    await prisma.user.update({
-      where: { id: payload.userId },
-      data: { emailVerified: true },
-    });
+    if (!data) {
+      return NextResponse.redirect(`${BASE_URL}/login?error=invalid_token`);
+    }
 
-    return NextResponse.redirect(`${BASE_URL}/login?verified=1`);
+    // await prisma.user.update({
+    //   where: { email: data.email },
+    //   data: { emailVerified: true },
+    // });
+
+    return NextResponse.redirect(`${BASE_URL}`);
   } catch {
     return NextResponse.redirect(`${BASE_URL}/login?error=invalid_token`);
   }
