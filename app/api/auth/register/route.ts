@@ -4,6 +4,13 @@ import { prisma } from "@/lib/db/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import redis from "@/lib/redisClient";
 import { generateVerificationToken } from "@/lib/register";
+import bcrypt from "bcryptjs";
+
+// email
+// ilyatitovich@gmail.com
+
+// password
+// dshfjsadhuiyw47ghsdkjgkjsgs
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +24,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
-      email,
-      // password
-    } = result.data;
+    const { email, password } = result.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
@@ -42,16 +46,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    // await prisma.$transaction(async (tx) => {
-    //   await tx.user.create({
-    //     data: {
-    //       email,
-    //       passwordHash,
-    //     },
-    //   });
-    // });
+    await prisma.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+        },
+      });
+    });
 
     const token = await generateVerificationToken(email);
     const link = `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;

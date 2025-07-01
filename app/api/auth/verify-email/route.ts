@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { prisma } from "@/lib/db/prisma";
+import { prisma } from "@/lib/db/prisma";
 import { verifyToken } from "@/lib/register";
 import jwt from "jsonwebtoken";
 
@@ -21,10 +21,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${BASE_URL}/login?error=invalid_token`);
     }
 
-    // await prisma.user.update({
-    //   where: { email: data.email },
-    //   data: { emailVerified: true },
-    // });
+    await prisma.user.update({
+      where: { email: data.email },
+      data: { emailVerified: true },
+    });
 
     const accessToken = jwt.sign(
       { email: data.email },
