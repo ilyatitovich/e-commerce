@@ -24,13 +24,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const id = `input-${name}`;
-
     return (
       <div className="w-full">
         {label && (
           <label
-            htmlFor={id}
+            htmlFor={name}
             className="block mb-1 text-sm font-medium text-gray-700"
           >
             {label}
@@ -38,14 +36,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
 
         <input
-          id={id}
+          id={name}
           name={name}
           type={type}
           placeholder={placeholder}
           disabled={disabled}
           ref={ref}
           aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-describedby={error ? `${name}-error` : undefined}
           className={clsx(
             "w-full p-3 border rounded-lg text-sm transition outline-none",
             disabled
@@ -61,7 +59,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
         {error && (
           <small
-            id={`${id}-error`}
+            id={`${name}-error`}
             className="text-sm text-red-500 mt-1"
             role="alert"
           >
