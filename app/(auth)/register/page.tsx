@@ -7,6 +7,9 @@ import {
   type RegisterSchema,
 } from "@/lib/validators/registerSchema";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
@@ -46,41 +49,29 @@ export default function RegisterPage() {
     <main className="flex items-center justify-center min-h-screen">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-1/2 p-6 rounded-2xl shadow-md space-y-5 flex flex-col gap-4"
+        className="w-1/3 p-6 rounded-2xl shadow-md space-y-5 flex flex-col gap-4"
       >
         <h1 className="text-2xl font-semibold text-center">Регистрация</h1>
 
-        <input
-          type="text"
-          placeholder="Email или телефон"
+        <Input
+          label="Email"
+          placeholder="Email"
+          type="email"
           {...register("email")}
-          className="w-full px-3 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          error={errors.email}
         />
-        {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-        )}
 
-        <div>
-          <input
-            type="password"
-            placeholder="Пароль"
-            {...register("password")}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {errors.password && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </p>
-          )}
-        </div>
+        <PasswordInput
+          label="Password"
+          placeholder="Password"
+          {...register("password")}
+          error={errors.password}
+          autoComplete="new-password"
+        />
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-6 rounded-lg transition disabled:opacity-50"
-        >
-          {isSubmitting ? "Регистрируем..." : "Зарегистрироваться"}
-        </button>
+        <Button type="submit" isLoading={isSubmitting}>
+          Зарегистрироваться
+        </Button>
 
         <div className="flex items-center gap-2">
           <hr className="flex-1 border-gray-300" />
