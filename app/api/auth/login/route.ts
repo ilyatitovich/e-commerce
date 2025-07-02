@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(
-        { message: "Неверный email или пароль" },
+        { message: "Incorrect email or password" },
         { status: 401 }
       );
     }
@@ -33,14 +33,14 @@ export async function POST(req: NextRequest) {
     const isPasswordCorrect = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordCorrect) {
       return NextResponse.json(
-        { message: "Неверный email или пароль" },
+        { message: "Incorrect email or password" },
         { status: 401 }
       );
     }
 
     if (!user.emailVerified) {
       return NextResponse.json(
-        { message: "Email не подтвержден. Проверьте почту." },
+        { message: "Email was not verified. Check out your mail" },
         { status: 403 }
       );
     }

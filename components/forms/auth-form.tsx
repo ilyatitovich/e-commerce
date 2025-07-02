@@ -6,7 +6,7 @@ import {
   registerSchema,
   type RegisterSchema,
 } from "@/lib/validators/registerSchema";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,13 @@ type AuthFormProps = {
 
 export default function AuthForm({ type }: AuthFormProps) {
   const rounter = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setError,
   } = useForm<RegisterSchema | LoginSchema>({
     resolver: zodResolver(type === "register" ? registerSchema : loginSchema),
   });
@@ -39,39 +39,39 @@ export default function AuthForm({ type }: AuthFormProps) {
   }, []);
 
   const onSubmit = async (data: RegisterSchema) => {
-    setError(null);
+    setError("root", { message: "" });
 
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    console.table(data);
+    try {
+      const res = await fetch(`/api/auth/${type}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        signal: controller.signal,
+      });
 
-    if (type === "register") {
-      rounter.push("/auth/verify-email-sent");
+      if (res.ok) {
+        if (type === "register") {
+          rounter.push("/auth/verify-email-sent");
+        }
+      } else {
+        if (res.status === 401) {
+          setError("root", { message: "Incorrect email or password" });
+          setError("email", { message: "" });
+          setError("password", { message: " " });
+          return;
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        console.log("Запрос отменён");
+      } else {
+        setError("root", { message: "Server error. Try again letter" });
+      }
     }
-
-    // try {
-    // const res = await fetch(`/api/auth/${type}`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(data),
-    //   signal: controller.signal,
-    // });
-
-    //   if (res.ok) {
-    //     setSuccess(true);
-    //   } else {
-    //     const json = await res.json();
-    //     setError(json.message || "Ошибка регистрации");
-    //   }
-    // } catch (err) {
-    //   if ((err as Error).name === "AbortError") {
-    //     console.log("Запрос отменён");
-    //   } else {
-    //     setError("Ошибка сети или сервера");
-    //   }
-    // }
   };
 
   return (
@@ -83,7 +83,11 @@ export default function AuthForm({ type }: AuthFormProps) {
         {type === "register" ? "Create an account" : "Welcome back"}
       </h1>
 
-      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+      {errors["root"]?.message && (
+        <p className="text-red-600 text-sm text-center">
+          {errors["root"]?.message}
+        </p>
+      )}
 
       <Input
         label="Email"
