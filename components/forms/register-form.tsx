@@ -41,27 +41,29 @@ export default function RegisterForm() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        signal: controller.signal,
-      });
+    console.table(data);
 
-      if (res.ok) {
-        setSuccess(true);
-      } else {
-        const json = await res.json();
-        setError(json.message || "Ошибка регистрации");
-      }
-    } catch (err) {
-      if ((err as Error).name === "AbortError") {
-        console.log("Запрос отменён");
-      } else {
-        setError("Ошибка сети или сервера");
-      }
-    }
+    // try {
+    //   const res = await fetch("/api/auth/register", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify(data),
+    //     signal: controller.signal,
+    //   });
+
+    //   if (res.ok) {
+    //     setSuccess(true);
+    //   } else {
+    //     const json = await res.json();
+    //     setError(json.message || "Ошибка регистрации");
+    //   }
+    // } catch (err) {
+    //   if ((err as Error).name === "AbortError") {
+    //     console.log("Запрос отменён");
+    //   } else {
+    //     setError("Ошибка сети или сервера");
+    //   }
+    // }
   };
 
   return (

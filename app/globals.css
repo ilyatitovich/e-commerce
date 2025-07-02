@@ -1,5 +1,5 @@
 @import "tailwindcss";
 
 button {
-  @apply cursor-pointer hover:opacity-80;
+  @apply cursor-pointer hover:opacity-80 active:scale-98;
 }
