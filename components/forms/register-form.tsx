@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button";
 import { OAuthButton } from "../ui/oauth-button";
 import GoogleIcon from "../icons/google";
 import { openOAuthWindow } from "@/lib/oauth";
+import { useRouter } from "next/navigation";
 
 export default function RegisterForm() {
+  const rounter = useRouter();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -42,6 +44,7 @@ export default function RegisterForm() {
     abortControllerRef.current = controller;
 
     console.table(data);
+    rounter.push("/auth/verify-email-sent");
 
     // try {
     //   const res = await fetch("/api/auth/register", {

@@ -16,12 +16,12 @@ export default function Home() {
         />
         <ol>
           <li>
-            <Link href="/register" className={styles.link}>
+            <Link href="/auth/register" className={styles.link}>
               Register
             </Link>
           </li>
           <li>
-            <Link href="/login" className={styles.link}>
+            <Link href="/auth/login" className={styles.link}>
               Login
             </Link>
           </li>
