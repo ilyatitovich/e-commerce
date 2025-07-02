@@ -1,10 +1,10 @@
 import React, { ButtonHTMLAttributes, forwardRef } from "react";
 import clsx from "clsx";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = {
   isLoading?: boolean;
   loadingText?: string;
-};
+} & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (

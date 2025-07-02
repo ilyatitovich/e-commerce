@@ -19,3 +19,16 @@ export const providers: Record<string, ProviderConfig> = {
     redirectUri: process.env.GOOGLE_REDIRECT_URI!,
   },
 };
+
+export function openOAuthWindow(link: string, title: string): void {
+  const width = 500;
+  const height = 600;
+  const left = window.screenX + (window.outerWidth - width) / 2;
+  const top = window.screenY + (window.outerHeight - height) / 2;
+
+  window.open(
+    link,
+    title,
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+  );
+}
