@@ -3,7 +3,7 @@ import { verifyAuthToken } from "@/lib/auth";
 
 const protectedRoutes = ["/"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const pathname = url.pathname;
 
@@ -15,7 +15,7 @@ export function middleware(req: NextRequest) {
 
   const token = req.cookies.get("token")?.value;
 
-  if (!token || !verifyAuthToken(token)) {
+  if (!token || !(await verifyAuthToken(token))) {
     const loginUrl = new URL("/auth/login", req.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);

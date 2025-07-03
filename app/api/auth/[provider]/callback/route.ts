@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { providers } from "@/lib/oauth";
 import { prisma } from "@/lib/db/prisma";
-// import jwt from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 export async function GET(
   req: NextRequest,
@@ -15,7 +15,6 @@ export async function GET(
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  // 1. Get token
   const tokenRes = await fetch(provider.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -59,16 +58,22 @@ export async function GET(
       email: profile.email,
       passwordHash: "", // пусто для OAuth
       provider: providerId,
+      emailVerified: true,
     },
   });
 
-  // 4. Create JWT
-  // const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
-  //   expiresIn: "7d",
-  // });
+  const token = jwt.sign({ email: profile.email }, process.env.JWT_SECRET!, {
+    expiresIn: "15m",
+  });
 
   const res = NextResponse.redirect("http://localhost:3000");
-  // res.cookies.set("token", token, { httpOnly: true });
+  res.cookies.set("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 15, // 15 минут
+    path: "/",
+  });
 
   return res;
 }
