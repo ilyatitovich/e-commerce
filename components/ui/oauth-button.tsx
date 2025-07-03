@@ -1,34 +1,30 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Button } from "./button";
-import { openOAuthWindow } from "@/lib/oauth";
+import { useOAuth } from "@/hooks/useOAuth";
+import type { OAuthProviderName } from "@/lib/oauth";
 
 type OAuthButtonProps = {
-  providerName: "Google" | "Facebook";
-  icon: React.ReactNode;
-  loading?: boolean;
+  providerName: OAuthProviderName;
+  icon: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export const OAuthButton = forwardRef<HTMLButtonElement, OAuthButtonProps>(
-  (
-    { providerName, icon, loading = false, disabled, children, ...props },
-    ref
-  ) => {
+  ({ providerName, icon, disabled, children, ...props }, ref) => {
+    const { isLoading, startOAuth } = useOAuth(providerName);
+
     return (
       <Button
         type="button"
         ref={ref}
-        disabled={disabled || loading}
+        disabled={disabled || isLoading}
         className="flex items-center justify-center gap-2 bg-white border border-black hover:bg-white"
         {...props}
         onClick={(e) => {
           props.onClick?.(e);
-          openOAuthWindow(
-            `/api/auth/${providerName.toLowerCase()}`,
-            providerName
-          );
+          startOAuth();
         }}
       >
-        {loading ? (
+        {isLoading ? (
           <span className="animate-spin inline-block w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full" />
         ) : (
           icon

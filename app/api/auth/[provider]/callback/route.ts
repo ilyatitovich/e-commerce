@@ -80,22 +80,55 @@ export async function GET(
       expiresIn: "15m",
     });
 
-    const res = NextResponse.redirect(process.env.BASE_URL!);
+    const html = `
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage(
+              { type: 'oauth-success'},
+              window.origin
+            );
+            window.opener.location.href = '${process.env.BASE_URL}';
+            window.close();
+          </script>
+          <p>Login successful. You can close this window.</p>
+        </body>
+      </html>
+    `;
+
+    const res = new NextResponse(html, {
+      headers: { "Content-Type": "text/html" },
+    });
 
     res.cookies.set("token", token, {
       httpOnly: true,
+      path: "/",
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 15,
-      path: "/",
     });
 
     return res;
   } catch (error) {
     console.error("OAuth error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    const html = `
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage(
+              { type: 'oauth-error', message: 'Internal Server Error' },
+              window.origin
+            );
+            window.close();
+          </script>
+          <p>Login failed. Please close this window and try again.</p>
+        </body>
+      </html>
+    `;
+
+    return new NextResponse(html, {
+      headers: { "Content-Type": "text/html" },
+      status: 500,
+    });
   }
 }
