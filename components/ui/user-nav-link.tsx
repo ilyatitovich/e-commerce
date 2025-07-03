@@ -19,7 +19,7 @@ export default function UserNavLink({ className }: UserNavLinkProps) {
   }
 
   return (
-    <Link href="/profile" className={className}>
+    <Link href="/user/profile" className={className}>
       Profile
     </Link>
   );
