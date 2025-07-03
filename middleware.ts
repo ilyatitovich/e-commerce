@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/auth";
 
-const protectedRoutes = ["/"];
+const protectedRoutes = ["/", "/profile"];
 
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
@@ -25,5 +25,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/"],
+  matcher: ["/", "/profile"],
 };
