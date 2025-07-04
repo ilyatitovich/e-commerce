@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthToken } from "@/lib/auth";
 
 const protectedRoutes = ["/", "/user/profile"];
+const authRoutes = ["/auth/login", "/auth/register"];
 
 export async function middleware(req: NextRequest) {
-  const url = req.nextUrl;
-  const pathname = url.pathname;
+  const { pathname } = req.nextUrl;
 
-  const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (!isProtected) return NextResponse.next();
+  const isProtectedRoute = protectedRoutes.includes(pathname);
+  const isAuthRoute = authRoutes.includes(pathname);
 
   const token = req.cookies.get("token")?.value;
+  const isTokenValid = token ? await verifyAuthToken(token) : false;
 
-  if (!token || !(await verifyAuthToken(token))) {
+  if (isTokenValid && isAuthRoute) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (!isTokenValid && isProtectedRoute) {
     const loginUrl = new URL("/auth/login", req.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
@@ -25,5 +27,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/user/:path*"],
+  matcher: ["/", "/user/:path*", "/auth/:path*"],
 };

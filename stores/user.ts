@@ -21,7 +21,10 @@ export const useUserStore = create<UserState>()(
       setUser: (user) => {
         set({ user });
       },
-      clearUser: () => set({ user: null }),
+      clearUser: () => {
+        set({ user: null });
+        useUserStore.persist.clearStorage();
+      },
     }),
     {
       name: "user-store",

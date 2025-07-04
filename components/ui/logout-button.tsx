@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function LogoutButton() {
   const router = useRouter();
-  const setUser = useUserStore((s) => s.setUser);
+  const clearUser = useUserStore((s) => s.clearUser);
 
   const handleLogout = async () => {
     try {
@@ -13,8 +13,7 @@ export default function LogoutButton() {
         method: "POST",
       });
 
-      setUser(null);
-      useUserStore.persist.clearStorage();
+      clearUser();
       router.push("/auth/login");
     } catch (error) {
       console.error("Logout failed:", error);
