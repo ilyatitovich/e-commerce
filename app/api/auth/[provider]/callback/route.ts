@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { providers } from "@/lib/oauth";
+import { getOAuthHtml, providers } from "@/lib/oauth";
 import { prisma } from "@/lib/db/prisma";
 import jwt from "jsonwebtoken";
 
@@ -9,6 +9,7 @@ export async function GET(
 ) {
   try {
     const code = req.nextUrl.searchParams.get("code");
+    const redirectTo = req.cookies.get("redirectTo")?.value;
     const providerId = context.params.provider;
     const provider = providers[providerId];
 
@@ -80,23 +81,7 @@ export async function GET(
       expiresIn: "15m",
     });
 
-    const html = `
-      <html>
-        <body>
-          <script>
-            window.opener.postMessage(
-              { type: 'oauth-success'},
-              window.origin
-            );
-            window.opener.location.href = '${process.env.BASE_URL}';
-            window.close();
-          </script>
-          <p>Login successful. You can close this window.</p>
-        </body>
-      </html>
-    `;
-
-    const res = new NextResponse(html, {
+    const res = new NextResponse(getOAuthHtml("success", redirectTo), {
       headers: { "Content-Type": "text/html" },
     });
 
@@ -111,22 +96,7 @@ export async function GET(
     return res;
   } catch (error) {
     console.error("OAuth error:", error);
-    const html = `
-      <html>
-        <body>
-          <script>
-            window.opener.postMessage(
-              { type: 'oauth-error', message: 'Internal Server Error' },
-              window.origin
-            );
-            window.close();
-          </script>
-          <p>Login failed. Please close this window and try again.</p>
-        </body>
-      </html>
-    `;
-
-    return new NextResponse(html, {
+    return new NextResponse(getOAuthHtml("error"), {
       headers: { "Content-Type": "text/html" },
       status: 500,
     });

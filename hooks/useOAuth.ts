@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { OAuthProviderName } from "@/lib/oauth";
 
 export function useOAuth(providerName: OAuthProviderName) {
+  const searchParams = useSearchParams();
   const popupRef = useRef<Window | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   function startOAuth() {
     setIsLoading(true);
+    const redirectTo = searchParams.get("redirectTo") || "/";
+    document.cookie = `redirectTo=${encodeURIComponent(redirectTo)}; path=/; max-age=300; SameSite=Lax`;
     popupRef.current = openOAuthWindow(
       `/api/auth/${providerName.toLowerCase()}`,
       providerName

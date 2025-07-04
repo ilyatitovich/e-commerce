@@ -21,3 +21,31 @@ export const providers: Record<string, ProviderConfig> = {
     redirectUri: process.env.GOOGLE_REDIRECT_URI!,
   },
 };
+
+export function getOAuthHtml(
+  status: "success" | "error",
+  redirectTo: string = "/"
+): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>OAuth ${status}</title>
+      </head>
+      <body>
+        <script>
+          window.opener.postMessage(
+            { type: 'oauth-${status}', message: 'Login successful' },
+            window.origin
+          );
+          window.opener.location.href = '${process.env.BASE_URL}${redirectTo}';
+          ${status === "success" ? "document.cookie = 'redirectTo=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';" : ""}
+          window.close();
+        </script>
+        ${status === "success" ? "<p>Login successful. You can close this window.</p>" : "<p>Login failed. Please close this window and try again.</p>"}
+      </body>
+    </html>
+  `;
+}
