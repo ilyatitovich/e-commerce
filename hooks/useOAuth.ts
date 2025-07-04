@@ -2,19 +2,47 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { OAuthProviderName } from "@/lib/oauth";
 
-export function useOAuth(providerName: OAuthProviderName) {
+type AuthState =
+  | "idle"
+  | "popupOpen"
+  | "authSuccess"
+  | "authFailed"
+  | "popupClosed";
+
+interface OAuthHookResult {
+  authState: AuthState;
+  startOAuth: () => void;
+}
+
+export function useOAuth(providerName: OAuthProviderName): OAuthHookResult {
   const searchParams = useSearchParams();
   const popupRef = useRef<Window | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const stateRef = useRef<string | null>(null); // For CSRF state parameter
+  const [authState, setAuthState] = useState<AuthState>("idle");
 
-  function startOAuth() {
-    setIsLoading(true);
+  function startOAuth(): void {
+    // Generate CSRF state
+    stateRef.current = crypto.randomUUID();
+
+    // Get redirect URL from search params or default to '/'
     const redirectTo = searchParams.get("redirectTo") || "/";
+
+    // Store redirect URL in cookie (max-age: 5 minutes)
     document.cookie = `redirectTo=${encodeURIComponent(redirectTo)}; path=/; max-age=300; SameSite=Lax`;
-    popupRef.current = openOAuthWindow(
-      `/api/auth/${providerName.toLowerCase()}`,
-      providerName
-    );
+
+    // Construct OAuth URL with CSRF state
+    const baseUrl = process.env.BASE_URL || window.location.origin;
+    const oauthUrl = `${baseUrl}/api/auth/${providerName.toLowerCase()}?state=${stateRef.current}`;
+
+    // Open popup
+    popupRef.current = openOAuthWindow(oauthUrl, providerName);
+
+    if (!popupRef.current) {
+      setAuthState("authFailed");
+      return;
+    }
+
+    setAuthState("popupOpen");
   }
 
   function openOAuthWindow(link: string, title: string): Window | null {
@@ -30,18 +58,28 @@ export function useOAuth(providerName: OAuthProviderName) {
     );
   }
 
+  // Handle postMessage events from OAuth provider
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      if (event.origin !== process.env.BASE_URL!) return;
+      const baseUrl = process.env.BASE_URL || window.location.origin;
 
-      if (event.data.type === "oauth-success") {
-        setIsLoading(false);
+      if (event.origin !== baseUrl) return;
+
+      const { type, code, error } = event.data;
+
+      // Verify CSRF state
+      // if (state !== stateRef.current) {
+      //   setAuthState("authFailed");
+      //   popupRef.current?.close();
+      //   return;
+      // }
+
+      if (type === "oauth-success" && code) {
+        setAuthState("authSuccess");
         popupRef.current?.close();
-      }
-      if (event.data.type === "oauth-error") {
-        setIsLoading(false);
+      } else if (type === "oauth-error" || error) {
+        setAuthState("authFailed");
         popupRef.current?.close();
-        alert(event.data.message || "OAuth error");
       }
     }
 
@@ -49,5 +87,36 @@ export function useOAuth(providerName: OAuthProviderName) {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  return { isLoading, startOAuth };
+  useEffect(() => {
+    if (authState !== "popupOpen") return;
+
+    let rafId: number;
+
+    const checkPopup = () => {
+      if (!popupRef.current || popupRef.current.closed) {
+        setAuthState("popupClosed");
+        return;
+      }
+      rafId = requestAnimationFrame(checkPopup);
+    };
+
+    rafId = requestAnimationFrame(checkPopup);
+
+    const timeout = setTimeout(
+      () => {
+        if (popupRef.current && !popupRef.current.closed) {
+          popupRef.current.close();
+          setAuthState("popupClosed");
+        }
+      },
+      5 * 60 * 1000
+    );
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeout);
+    };
+  }, [authState]);
+
+  return { authState, startOAuth };
 }

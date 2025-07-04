@@ -14,6 +14,7 @@ import { OAuthButton } from "../ui/oauth-button";
 import GoogleIcon from "../icons/google";
 import { useRouter } from "next/navigation";
 import { loginSchema, type LoginSchema } from "@/lib/validators/loginSchema";
+import Link from "next/link";
 
 type AuthFormProps = {
   type: "register" | "login";
@@ -83,6 +84,14 @@ export default function AuthForm({ type }: AuthFormProps) {
         {type === "register" ? "Create an account" : "Welcome back"}
       </h1>
 
+      <OAuthButton icon={<GoogleIcon />} providerName="Google" />
+
+      <div className="flex items-center gap-2">
+        <hr className="flex-1 border-gray-300" />
+        <span className="text-gray-500 text-sm font-bold">OR</span>
+        <hr className="flex-1 border-gray-300" />
+      </div>
+
       {errors["root"]?.message && (
         <p className="text-red-600 text-sm text-center">
           {errors["root"]?.message}
@@ -110,13 +119,31 @@ export default function AuthForm({ type }: AuthFormProps) {
         {type === "register" ? "Sign Up" : "Sign In"}
       </Button>
 
-      <div className="flex items-center gap-2">
-        <hr className="flex-1 border-gray-300" />
-        <span className="text-gray-500 text-sm font-bold">OR</span>
-        <hr className="flex-1 border-gray-300" />
+      <div className="mt-4 flex flex-col items-center gap-2 text-sm text-muted-foreground">
+        {type === "login" ? (
+          <>
+            <Link
+              href="/auth/reset-password"
+              className="hover:underline transition-colors"
+            >
+              Forgot password?
+            </Link>
+            <Link
+              href="/auth/register"
+              className="hover:underline transition-colors"
+            >
+              Don&apos;t have an account? Register
+            </Link>
+          </>
+        ) : (
+          <Link
+            href="/auth/login"
+            className="hover:underline transition-colors"
+          >
+            Already have an account? Login
+          </Link>
+        )}
       </div>
-
-      <OAuthButton icon={<GoogleIcon />} providerName="Google" />
     </form>
   );
 }

@@ -10,13 +10,13 @@ type OAuthButtonProps = {
 
 export const OAuthButton = forwardRef<HTMLButtonElement, OAuthButtonProps>(
   ({ providerName, icon, disabled, children, ...props }, ref) => {
-    const { isLoading, startOAuth } = useOAuth(providerName);
+    const { authState, startOAuth } = useOAuth(providerName);
 
     return (
       <Button
         type="button"
         ref={ref}
-        disabled={disabled || isLoading}
+        disabled={disabled || authState === "popupOpen"}
         className="flex items-center justify-center gap-2 bg-white border border-black hover:bg-white"
         {...props}
         onClick={(e) => {
@@ -24,7 +24,7 @@ export const OAuthButton = forwardRef<HTMLButtonElement, OAuthButtonProps>(
           startOAuth();
         }}
       >
-        {isLoading ? (
+        {authState === "popupOpen" ? (
           <span className="animate-spin inline-block w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full" />
         ) : (
           icon
